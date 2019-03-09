@@ -65,12 +65,10 @@ def count_titer_measurements(fname):
 
 
 def populate_categories(metadata):
-    super_category = lambda x: (x['year'],
-                                x['month'])
+    super_category = lambda x: (x['year'])
 
     category = lambda x: (x['region'],
-                          x['year'],
-                          x['month'])
+                          x['year'])
 
     virus_by_category = defaultdict(list)
     virus_by_super_category = defaultdict(list)
@@ -107,7 +105,7 @@ def flu_subsampling(metadata, viruses_per_month, time_interval, titer_fnames=Non
         def priority(strain):
             return np.random.random()
 
-    print("Viruses per month:", viruses_per_month)
+    print("Viruses per category:", viruses_per_month)
 
     if priority_region is None:
         # Request an equal number of viruses per subcategory.
@@ -241,7 +239,7 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parser.add_argument('-v', '--viruses_per_month', type = int, default=15,
+    parser.add_argument('-v', '--viruses_per_year', type = int, default=15,
                         help='Subsample x viruses per country per month. Set to 0 to disable subsampling.')
     parser.add_argument('--sequences', nargs='+', help="FASTA file with viral sequences, one for each segment")
     parser.add_argument('--metadata', nargs='+', help="file with metadata associated with viral sequences, one for each segment")
@@ -297,7 +295,7 @@ if __name__ == '__main__':
     # subsample by region, month, year
     selected_strains = flu_subsampling(
         {x:filtered_metadata[guide_segment][x] for x in strains_with_all_segments},
-        args.viruses_per_month,
+        args.viruses_per_year,
         time_interval,
         titer_fnames=args.titers,
         priority_region=args.priority_region,

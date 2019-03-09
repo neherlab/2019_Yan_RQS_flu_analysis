@@ -2,16 +2,12 @@ from datetime import date
 import pandas as pd
 from treetime.utils import numeric_date
 
-segments = ['ha', 'na']
-path_to_fauna = '../fauna'
+segments = ['ha']
 min_length = 900
-frequency_regions = ['north_america', 'south_america', 'europe', 'china', 'oceania',
-                     'southeast_asia', 'japan_korea', 'south_asia', 'africa']
 
-
-def vpm(v):
-    vpm = {'2y':90, '3y':60, '6y':30, '12y':15}
-    return vpm[v.resolution] if v.resolution in vpm else 5
+def vpy(v):
+    vpy = {'all':50}
+    return vpy[v.resolution] if v.resolution in vpy else 5
 
 def reference_strain(v):
     references = {'h3n2':"A/Beijing/32/1992",
@@ -33,12 +29,15 @@ def translations(w):
 def pivot_interval(w):
     """Returns the number of months between pivots by build resolution.
     """
-    pivot_intervals_by_resolution = {'2y': 1, '3y': 2, '6y': 3, '12y': 6}
+    pivot_intervals_by_resolution = {'all': 0.2, '2y': 1, '3y': 2, '6y': 3, '12y': 6}
     return pivot_intervals_by_resolution[w.resolution]
 
 def min_date(w):
-    now = numeric_date(date.today())
-    return now - int(w.resolution[:-1])
+    if w.resolution=='all':
+        return {"h1n1":1918, "h3n2":1968, "Ball":1900, "h1n1pdm":2009}[w.lineage]
+    else:
+        now = numeric_date(date.today())
+        return now - int(w.resolution[:-1])
 
 def max_date(w):
     return numeric_date(date.today())
@@ -52,41 +51,6 @@ def clock_rate(w):
     }
     return rate[(w.lineage, w.segment)]
 
-#
-# Define clades functions
-#
-def _get_clades_file_for_wildcards(wildcards):
-    if wildcards.segment == "ha":
-        return "config/clades_%s_ha.tsv"%(wildcards.lineage)
-    else:
-        return "results/clades_%s_%s_ha_%s_%s_%s.json"%(wildcards.center, wildcards.lineage,
-                                                        wildcards.resolution, wildcards.passage, wildcards.assay)
-
-
-#
-# Define titer data sets to be used.
-#
-def _get_tdb_databases(wildcards):
-    if wildcards.center == 'who':
-        return " ".join([center + "_tdb" for center in centers if center != "who"]+['tdb'])
-    else:
-        return wildcards.center + "_tdb tdb"
-
-#
-# Define LBI parameters and functions.
-#
-LBI_params = {
-    '2y': {"tau": 0.3, "time_window": 0.5},
-    '3y': {"tau": 0.4, "time_window": 0.6},
-    '6y': {"tau": 0.25, "time_window": 0.75},
-    '12y': {"tau": 0.25, "time_window": 0.75}
-}
-
-def _get_lbi_tau_for_wildcards(wildcards):
-    return LBI_params[wildcards.resolution]["tau"]
-
-def _get_lbi_window_for_wildcards(wildcards):
-    return LBI_params[wildcards.resolution]["time_window"]
 
 #
 # Configure amino acid distance masks.
@@ -113,62 +77,46 @@ def _get_mask_names_by_wildcards(wildcards):
     return " ".join(config.loc[:, "mask"].values)
 
 
-rule files:
-    params:
-        outliers = "config/outliers_{lineage}.txt",
-        exclude_sites = "config/exclude-sites_{lineage}.txt",
-        references = "config/references_{lineage}.txt",
-        reference = "config/reference_{lineage}_{segment}.gb",
-        colors = "config/colors.tsv",
-        auspice_config = "config/auspice_config_{lineage}.json",
+outliers = "config/outliers_{lineage}.txt",
+exclude_sites = "config/exclude-sites_{lineage}.txt",
+references = "config/references_{lineage}.txt",
+reference = "config/reference_{lineage}_{segment}.gb",
+colors = "config/colors.tsv",
+auspice_config = "config/auspice_config_{lineage}.json",
+input_sequences = "data/{lineage}_{segment}.fasta"
+titer_data = "data/titers_{lineage}.fasta"
 
-files = rules.files.params
-
-
-rule download_sequences:
-    message: "Downloading sequences from fauna"
+rule prefilter:
+    input:
+        input_sequences
     output:
-        sequences = "data/{lineage}_{segment}.fasta"
-    params:
-        fasta_fields = "strain virus accession collection_date region country division location passage_category submitting_lab age gender"
-    shell:
-        """
-        python3 {path_to_fauna}/vdb/download.py \
-            --database vdb \
-            --virus flu \
-            --fasta_fields {params.fasta_fields} \
-            --resolve_method split_passage \
-            --select locus:{wildcards.segment} lineage:seasonal_{wildcards.lineage} \
-            --path data \
-            --fstem {wildcards.lineage}_{wildcards.segment}
-        """
+        "results/prefilter_{lineage}_{segment}.fasta"
+    run:
+        from Bio import SeqIO
+        from collections import defaultdict
+        seqs = defaultdict(list)
+        print("reading", input)
+        for seq in SeqIO.parse(input, 'fasta'):
+            strain = seq.name.split('|')[0]
+            seqs[strain].append(seq)
+        outseqs = []
+        for strain in seqs:
+            seqs[strain].sort(key=lambda x:-len(x.seq))
+            outseqs.append(seqs[strain][0])
+        print("writing to",output)
+        SeqIO.write(outseqs, output, 'fasta')
 
-rule download_titers:
-    message: "Downloading titers from fauna: {wildcards.lineage}, {wildcards.assay}, {wildcards.center}"
-    output:
-        titers = "data/{center}_{lineage}_{passage}_{assay}_titers.tsv"
-    params:
-        db = _get_tdb_databases,
-    shell:
-        """
-        python3 {path_to_fauna}/tdb/download.py \
-            --database tdb {params.db} \
-            --virus flu \
-            --subtype {wildcards.lineage} \
-            --select assay_type:{wildcards.assay} serum_passage_category:{wildcards.passage} \
-            --path data \
-            --fstem {wildcards.center}_{wildcards.lineage}_{wildcards.passage}_{wildcards.assay}
-        """
 
 rule parse:
     message: "Parsing fasta into sequences and metadata"
     input:
-        sequences = rules.download_sequences.output.sequences
+        sequences = rules.prefilter.output
     output:
         sequences = "results/sequences_{lineage}_{segment}.fasta",
         metadata = "results/metadata_{lineage}_{segment}.tsv"
     params:
-        fasta_fields =  "strain virus isolate_id date region country division location passage authors age gender"
+        fasta_fields =  "strain accession segment_n segment type subtype date season country state host pdm"
+        # fasta_fields =  "strain virus isolate_id date region country division location passage authors age gender"
     shell:
         """
         augur parse \
@@ -184,12 +132,11 @@ rule filter:
         Filtering {wildcards.lineage} {wildcards.segment} sequences:
           - less than {params.min_length} bases
           - outliers
-          - samples with missing region and country metadata
         """
     input:
         metadata = rules.parse.output.metadata,
         sequences = rules.parse.output.sequences,
-        exclude = files.outliers
+        exclude = outliers
     output:
         sequences = 'results/filtered_{lineage}_{segment}.fasta'
     params:
@@ -202,7 +149,6 @@ rule filter:
             --min-length {params.min_length} \
             --non-nucleotide \
             --exclude {input.exclude} \
-            --exclude-where country=? region=? \
             --output {output}
         """
 
@@ -210,12 +156,12 @@ rule select_strains:
     input:
         sequences = expand("results/filtered_{{lineage}}_{segment}.fasta", segment=segments),
         metadata = expand("results/metadata_{{lineage}}_{segment}.tsv", segment=segments),
-        titers = rules.download_titers.output.titers,
-        include = files.references
+        titers = titer_data,
+        include = references
     output:
         strains = "results/strains_{center}_{lineage}_{resolution}_{passage}_{assay}.txt",
     params:
-        viruses_per_month = vpm
+        viruses_per_year = vpy
     shell:
         """
         python3 scripts/select_strains.py \
@@ -225,7 +171,7 @@ rule select_strains:
             --include {input.include} \
             --lineage {wildcards.lineage} \
             --resolution {wildcards.resolution} \
-            --viruses_per_month {params.viruses_per_month} \
+            --viruses_per_year {params.viruses_per_year} \
             --titers {input.titers} \
             --output {output.strains}
         """
@@ -251,7 +197,7 @@ rule align:
         """
     input:
         sequences = rules.extract.output.sequences,
-        reference = files.reference
+        reference = reference
     output:
         alignment = "results/aligned_{center}_{lineage}_{segment}_{resolution}_{passage}_{assay}.fasta"
     shell:
@@ -268,7 +214,7 @@ rule tree:
     message: "Building tree"
     input:
         alignment = rules.align.output.alignment,
-        exclude_sites = files.exclude_sites
+        exclude_sites = exclude_sites
     output:
         tree = "results/tree-raw_{center}_{lineage}_{segment}_{resolution}_{passage}_{assay}.nwk"
     shell:
@@ -340,7 +286,7 @@ rule translate:
     input:
         tree = rules.refine.output.tree,
         node_data = rules.ancestral.output.node_data,
-        reference = files.reference
+        reference = reference
     output:
         node_data = "results/aa-muts_{center}_{lineage}_{segment}_{resolution}_{passage}_{assay}.json",
     shell:
@@ -393,7 +339,7 @@ rule traits:
 
 rule titers_sub:
     input:
-        titers = rules.download_titers.output.titers,
+        titers = titer_data,
         aa_muts = rules.translate.output,
         alignments = translations,
         tree = rules.refine.output.tree
@@ -413,7 +359,7 @@ rule titers_sub:
 
 rule titers_tree:
     input:
-        titers = rules.download_titers.output.titers,
+        titers = titer_data,
         tree = rules.refine.output.tree
     output:
         titers_model = "results/titers-tree-model_{center}_{lineage}_{segment}_{resolution}_{passage}_{assay}.json",
@@ -488,7 +434,7 @@ rule tree_frequencies:
         min_date = min_date,
         max_date = max_date,
         pivot_interval = pivot_interval,
-        regions = ['global'] + frequency_regions,
+        regions = ['global'],
         min_clade = 20
     output:
         "results/tree-frequencies_{center}_{lineage}_{segment}_{resolution}_{passage}_{assay}.json",
@@ -506,33 +452,6 @@ rule tree_frequencies:
             --max-date {params.max_date} \
             --output {output}
         """
-
-
-rule clades:
-    message: "Annotating clades"
-    input:
-        tree = "results/tree_{center}_{lineage}_ha_{resolution}_{passage}_{assay}.nwk",
-        nt_muts = rules.ancestral.output,
-        aa_muts = rules.translate.output,
-        clades = _get_clades_file_for_wildcards
-    output:
-        clades = "results/clades_{center}_{lineage}_{segment}_{resolution}_{passage}_{assay}.json"
-    run:
-        if wildcards.segment == 'ha':
-            shell("""
-                augur clades \
-                    --tree {input.tree} \
-                    --mutations {input.nt_muts} {input.aa_muts} \
-                    --clades {input.clades} \
-                    --output {output.clades}
-            """)
-        else:
-            shell("""
-                python3 scripts/import_tip_clades.py \
-                    --tree {input.tree} \
-                    --clades {input.clades} \
-                    --output {output.clades}
-            """)
 
 rule distances:
     input:
@@ -557,24 +476,3 @@ rule distances:
             --mask-names {params.mask_names}
         """
 
-rule lbi:
-    message: "Calculating LBI"
-    input:
-        tree = rules.refine.output.tree,
-        branch_lengths = rules.refine.output.node_data
-    params:
-        tau = _get_lbi_tau_for_wildcards,
-        window = _get_lbi_window_for_wildcards,
-        names = "lbi"
-    output:
-        lbi = "results/lbi_{center}_{lineage}_{segment}_{resolution}_{passage}_{assay}.json"
-    shell:
-        """
-        augur lbi \
-            --tree {input.tree} \
-            --branch-lengths {input.branch_lengths} \
-            --output {output} \
-            --attribute-names {params.names} \
-            --tau {params.tau} \
-            --window {params.window}
-        """

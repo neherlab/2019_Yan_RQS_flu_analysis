@@ -1,14 +1,14 @@
 include: "Snakefile_base"
 
-segments = ['ha', 'na']
-lineages = ['h3n2', 'h1n1pdm', 'vic', 'yam']
-resolutions = ['2y', '3y', '6y', '12y']
+segments = ['ha'] #, 'na']
+lineages = ['h3n2'] #, 'h1n1pdm', 'vic', 'yam', 'Ball']
+resolutions = ['all']
 
 passages = ['cell']
 centers = ['cdc']
 assays = ['hi']
 
-rule all_live:
+rule all_lineages:
     input:
         auspice_tree = expand("auspice/flu_seasonal_{lineage}_{segment}_{resolution}_tree.json",
                               lineage=lineages, segment=segments, resolution=resolutions),
@@ -17,12 +17,14 @@ rule all_live:
         auspice_tip_frequencies = expand("auspice/flu_seasonal_{lineage}_{segment}_{resolution}_tip-frequencies.json",
                               lineage=lineages, segment=segments, resolution=resolutions)
 
-# separate rule for interaction with fauna
-rule download_all:
+rule split:
     input:
-        titers = expand("data/{lineage}_{center}_{assay}_{passage}_titers.tsv",
-                         lineage=lineages, center=centers, assay=assays, passage=passages),
-        sequences = expand("data/{lineage}_{segment}.fasta", lineage=lineages, segment=segments)
+        tree = "results/tree_cdc_Ball_{segment}_all_cell_hi.nwk",
+    output:
+        yam = "results/tree_cdc_yam_{segment}_all_cell_hi.nwk",
+        vic = "results/tree_cdc_vic_{segment}_all_cell_hi.nwk"
+    script:
+        "split_trees.py"
 
 
 def _get_node_data_for_export(wildcards):
@@ -35,9 +37,7 @@ def _get_node_data_for_export(wildcards):
         rules.translate.output.node_data,
         rules.titers_tree.output.titers_model,
         rules.titers_sub.output.titers_model,
-        rules.clades.output.clades,
         rules.traits.output.node_data,
-        rules.lbi.output.lbi
     ]
 
     # Only request a distance file for builds that have mask configurations
@@ -53,7 +53,7 @@ rule export:
     input:
         tree = rules.refine.output.tree,
         metadata = rules.parse.output.metadata,
-        auspice_config = files.auspice_config,
+        auspice_config = auspice_config,
         node_data = _get_node_data_for_export
     output:
         auspice_tree = "auspice/flu_{center}_{lineage}_{segment}_{resolution}_{passage}_{assay}_tree.json",
@@ -90,6 +90,5 @@ rule clean:
     params:
         "results ",
         "auspice ",
-        "auspice-who"
     shell:
         "rm -rfv {params}"
