@@ -1,0 +1,78 @@
+LOCUS       CY020477                1733 bp    cRNA    linear   VRL 19-MAR-2007
+DEFINITION  Influenza A virus (A/Singapore/6/1986(H1N1)) segment 4, complete
+            sequence.
+ACCESSION   CY020477
+VERSION     CY020477.1
+KEYWORDS    .
+SOURCE      Influenza A virus (A/Singapore/6/1986(H1N1))
+  ORGANISM  Influenza A virus (A/Singapore/6/1986(H1N1))
+            Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+            Orthomyxoviridae; Influenzavirus A.
+REFERENCE   1  (bases 1 to 1733)
+  AUTHORS   Ghedin,E., Spiro,D., Miller,N., Zaborsky,J., Feldblyum,T.,
+            Subbu,V., Shumway,M., Sparenborg,J., Groveman,L., Halpin,R.,
+            Sitz,J., Koo,H., Salzberg,S.L., Webster,R.G., Hoffmann,E.,
+            Krauss,S., Naeve,C., Bao,Y., Bolotov,P., Dernovoy,D., Kiryutin,B.,
+            Lipman,D.J. and Tatusova,T.
+  TITLE     The NIAID Influenza Genome Sequencing Project
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1733)
+  CONSRTM   The NIAID Influenza Genome Sequencing Consortium
+  TITLE     Direct Submission
+  JOURNAL   Submitted (19-MAR-2007) on behalf of TIGR/St. Jude Children's
+            Research Hospital/NCBI, National Center for Biotechnology
+            Information, NIH, Bethesda, MD 20894, USA
+FEATURES             Location/Qualifiers
+     source          1..1733
+                     /organism="Influenza A virus (A/Singapore/6/1986(H1N1))"
+                     /mol_type="viral cRNA"
+                     /strain="A/Singapore/6/1986"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:380212"
+                     /segment="4"
+                     /lab_host="P1 passage(s)"
+                     /country="Singapore"
+                     /collection_date="1986"
+     gene            11..1711
+                     /gene="HA"
+     CDS             11..61
+                     /gene="SigPep"
+     CDS             62..1042
+                     /gene="HA1"
+                     /product="HA1"
+     CDS             1043..1708
+                     /gene="HA2"
+                     /product="HA2"
+ORIGIN      
+        1 aacaaccaaa atgaaagcaa aactactagt cctgttatgt gcatttacag ctacagatgc
+       61 agacaccata tgtataggct accatgcgaa caactcaacc gacactgttg acacagtact
+      121 tgaaaagaac gtgacagtga cacactctgt caacctactt gaggacagtc acaacggaaa
+      181 actatgtcga ctaaaaggaa tagccccact acaattgggt aattgcagca ttgccggatg
+      241 gatcttagga aacccagaat gcgaatcact gttttctaag aaatcatggt cctacattgc
+      301 agaaacacca aactccgaga atggaacatg ttacccaggg tatttcgccg actatgagga
+      361 actgagggag caattgagtt cagtatcatc attcgagaga ttcgaaatat tccccaaaga
+      421 aagctcatgg cccaaccaca ccgtaaccaa aggagtaacg gcatcatgct cccataaggg
+      481 gagaagcagt ttttacagaa atttgctatg gctgacgaag aagaatggct cgtacccaaa
+      541 tctgagcaag tcctatgtga acaacaaaga gaaagaagtc cttgtactat ggggtgttca
+      601 tcacccgtct aacatagggg accaaagggc catctatcat acagaaaatg cttatgtctc
+      661 tgtagtgtct tcacattata acaggagatt caccccagaa atagcaaaaa gacccaaagt
+      721 aagagatcaa gaaggaagaa ttaactacta ctggactctg ctggaacccg gggacacaat
+      781 aatatttgag gcaaatggaa atctaatagc gccatggtat gctttcgcac tgagtagagg
+      841 ctttgggtca ggaatcatca cctcaaacgc atcaatggat gaatgtgacg cgaagtgtca
+      901 aacaccccag ggagctataa acagtagtct tcctttccag aatgtacacc cagtcacaat
+      961 aggagagtgc ccaaagtatg tcaggagtac aaaattaagg atggttacag gactaaggaa
+     1021 catcccatcc attcaatcca gaggtttgtt tggagccatt gccggtttca ttgaaggggg
+     1081 gtggactgga atgatagatg gatggtatgg ttatcatcat cagaatgaac aaggatctgg
+     1141 ctatgctgcg gatcaaaaaa gcacacaaaa tgccattaac gggattacaa acaaggtgaa
+     1201 ttctgtaatc gagaaaatga acactcaatt cacagctgtg ggcaaagaat tcaacaaatt
+     1261 agaaagaagg atggaaaact taaataaaaa agttgatgat ggatttctgg acatttggac
+     1321 atataatgca gaattgttgg ttctactgga aaatgaaagg actttggatt ttcatgactc
+     1381 aaatgtgaag aatctgtatg agaaagtaaa aagccaatta aagaataatg ccaaagaaat
+     1441 aggaaacggg tgttttgaat tctaccacaa gtgtaacaat gaatgcatgg aaagtgtgaa
+     1501 aaatggaact tatgactatc caaaatattc cgaggaatca aaattaaaca gggaaaaaat
+     1561 tgatggagtg aaattggaat caatgggagt ctatcagatt ctggcgatct actcaactgt
+     1621 cgccagttca ctggtgcttt tggtctccct gggggcaatc agcttctgga tgtgttctaa
+     1681 tgggtctttg cagtgtagaa tatgcatctg agaccagaat ttcagaaata taa
+//
+

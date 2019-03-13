@@ -6,8 +6,8 @@ segments = ['ha']
 min_length = 900
 
 def vpy(v):
-    vpy = {'all':50}
-    return vpy[v.resolution] if v.resolution in vpy else 5
+    vpy = {'all':{'h3n2':20, 'h1n1':20, 'h1n1pdm':50, 'B':10}}
+    return vpy[v.resolution][v.lineage] if v.resolution in vpy else 5
 
 def reference_strain(v):
     references = {'h3n2':"A/Beijing/32/1992",
@@ -29,12 +29,12 @@ def translations(w):
 def pivot_interval(w):
     """Returns the number of months between pivots by build resolution.
     """
-    pivot_intervals_by_resolution = {'all': 0.2, '2y': 1, '3y': 2, '6y': 3, '12y': 6}
+    pivot_intervals_by_resolution = {'all': 24, '2y': 1, '3y': 2, '6y': 3, '12y': 6}
     return pivot_intervals_by_resolution[w.resolution]
 
 def min_date(w):
     if w.resolution=='all':
-        return {"h1n1":1918, "h3n2":1968, "Ball":1900, "h1n1pdm":2009}[w.lineage]
+        return {"h1n1":1918, "h3n2":1968, "B":1900, "h1n1pdm":2009}[w.lineage]
     else:
         now = numeric_date(date.today())
         return now - int(w.resolution[:-1])
@@ -46,8 +46,10 @@ def clock_rate(w):
     rate = {
         ('h3n2', 'ha'): 0.0043, ('h3n2', 'na'):0.0029,
         ('h1n1pdm', 'ha'): 0.0040, ('h1n1pdm', 'na'):0.0032,
+        ('h1n1', 'ha'): 0.0040, ('h1n1', 'na'):0.0032,
         ('vic', 'ha'): 0.0024, ('vic', 'na'):0.0015,
-        ('yam', 'ha'): 0.0019, ('yam', 'na'):0.0013
+        ('yam', 'ha'): 0.0019, ('yam', 'na'):0.0013,
+        ('B', 'ha'): 0.0019, ('B', 'na'):0.0013
     }
     return rate[(w.lineage, w.segment)]
 
@@ -83,48 +85,67 @@ references = "config/references_{lineage}.txt",
 reference = "config/reference_{lineage}_{segment}.gb",
 colors = "config/colors.tsv",
 auspice_config = "config/auspice_config_{lineage}.json",
-input_sequences = "data/{lineage}_{segment}.fasta"
-titer_data = "data/titers_{lineage}.fasta"
-
-rule prefilter:
-    input:
-        input_sequences
-    output:
-        "results/prefilter_{lineage}_{segment}.fasta"
-    run:
-        from Bio import SeqIO
-        from collections import defaultdict
-        seqs = defaultdict(list)
-        print("reading", input)
-        for seq in SeqIO.parse(input, 'fasta'):
-            strain = seq.name.split('|')[0]
-            seqs[strain].append(seq)
-        outseqs = []
-        for strain in seqs:
-            seqs[strain].sort(key=lambda x:-len(x.seq))
-            outseqs.append(seqs[strain][0])
-        print("writing to",output)
-        SeqIO.write(outseqs, output, 'fasta')
+input_data = "data/{lineage}_{segment}_download.tsv",
+titer_data = "data/titers_{lineage}.tsv"
 
 
 rule parse:
-    message: "Parsing fasta into sequences and metadata"
     input:
-        sequences = rules.prefilter.output
+        input_data
     output:
-        sequences = "results/sequences_{lineage}_{segment}.fasta",
-        metadata = "results/metadata_{lineage}_{segment}.tsv"
-    params:
-        fasta_fields =  "strain accession segment_n segment type subtype date season country state host pdm"
-        # fasta_fields =  "strain virus isolate_id date region country division location passage authors age gender"
-    shell:
-        """
-        augur parse \
-            --sequences {input.sequences} \
-            --output-sequences {output.sequences} \
-            --output-metadata {output.metadata} \
-            --fields {params.fasta_fields}
-        """
+        sequences="results/sequences_{lineage}_{segment}.fasta",
+        metadata="results/metadata_{lineage}_{segment}.tsv"
+    run:
+        import pandas as pd
+        from Bio import SeqIO, Seq, SeqRecord
+        from collections import defaultdict
+        mapper = {'Strain Name':'strain', 'Geographic Grouping':'region',
+                  'Sequence Accession':'accession','Country':'country',
+                  'State/Province':"division",'Host Species':'host',
+                  'Collection Date':'date', 'real_date':'real_date'}
+
+        print(input)
+        df = pd.read_csv(str(input), sep='\t').rename(columns=mapper)
+
+        seqs = defaultdict(list)
+        for ri, seq in df.iterrows():
+            strain = seq["strain"]
+            if any([x in strain for x in ",()]["]):
+                continue
+            seqs[strain].append(seq)
+
+        outseqs = []
+        for strain in seqs:
+            seqs[strain].sort(key=lambda x:-len(x["Sequence"]))
+            s = seqs[strain][0]
+            try:
+                date = pd.core.tools.datetimes.to_datetime(s['date'],format = '%m/%d/%Y').strftime('%Y-%m-%d')
+            except ValueError:
+                try:
+                    y = int(s['date'])
+                    date = s['date']+'-XX-XX'
+                except:
+                    continue
+
+            if wildcards.lineage=='h1n1':
+                s['real_date']=date
+                year = int(date[:4])
+                s['date']= str(int(date[:4])-(23 if year>1970 else 0))+date[4:]
+            else:
+                s['date']=date
+            for c in " '+-":
+                s['strain']=s['strain'].replace(c,'_')
+            outseqs.append(s)
+
+        SeqIO.write([SeqRecord.SeqRecord(seq=Seq.Seq(s['Sequence']),
+                                         name=s["strain"],
+                                         id=s["strain"],
+                                         description="") for s in outseqs],
+                     output.sequences, 'fasta')
+
+        df2 = pd.DataFrame(outseqs).loc[:,mapper.values()]
+        df2.to_csv(output.metadata, sep='\t')
+
 
 rule filter:
     message:
@@ -161,7 +182,8 @@ rule select_strains:
     output:
         strains = "results/strains_{center}_{lineage}_{resolution}_{passage}_{assay}.txt",
     params:
-        viruses_per_year = vpy
+        viruses_per_year = vpy,
+        time_interval = "1900-01-10 2019-12-31"
     shell:
         """
         python3 scripts/select_strains.py \
@@ -170,7 +192,7 @@ rule select_strains:
             --segments {segments} \
             --include {input.include} \
             --lineage {wildcards.lineage} \
-            --resolution {wildcards.resolution} \
+            --time-interval {params.time_interval} \
             --viruses_per_year {params.viruses_per_year} \
             --titers {input.titers} \
             --output {output.strains}
@@ -247,7 +269,8 @@ rule refine:
         date_inference = "marginal",
         clock_filter_iqd = 4,
         clock_rate = clock_rate
-    shell:
+    run:
+        shell(
         """
         augur refine \
             --tree {input.tree} \
@@ -256,12 +279,52 @@ rule refine:
             --output-tree {output.tree} \
             --output-node-data {output.node_data} \
             --timetree \
-            --clock-rate {params.clock_rate} \
             --coalescent {params.coalescent} \
             --date-confidence \
             --date-inference {params.date_inference} \
             --clock-filter-iqd {params.clock_filter_iqd}
         """
+        )
+        if wildcards.lineage=='h1n1':
+            nd_file = output.node_data
+            tree_file = output.tree
+            mdata = input.metadata
+            from Bio import Phylo
+            import json
+            from augur.utils import read_metadata
+            T = Phylo.read(tree_file, 'newick')
+            m,_= read_metadata(mdata)
+            with open(nd_file, 'rt') as fh:
+                node_data = json.load(fh)
+
+            tmp_nodes = [n for n in T.get_terminals() if n.name in
+                            ["A/Fiji/2/1988","A/Memphis/13/1978",
+                             "A/Finland/92/1978","A/Leningrad/1954/1",
+                             "A/Tientsin/78/1977"]]
+            freezer_branch = T.common_ancestor(tmp_nodes)
+            # for n in T.find_clades(order='postorder'):
+            #     if n.is_terminal():
+            #         n.min_year = int(m[n.name]['real_date'][:4])
+            #     else:
+            #         cdates = [c.min_year for c in n]
+            #         n.min_year = min(cdates)
+            #         if n.min_year<1970 and max(cdates)>1970 and max(cdates)<1980:
+            #             freezer_branch = [c for c in n if c.min_year>1970][0]
+            #             break
+            rate = node_data['clock']['rate']
+            freezer_branch.branch_length+=23*rate
+            node_data['nodes'][freezer_branch.name]['clock_length']+=23*rate
+            for n in freezer_branch.find_clades():
+                node_data['nodes'][n.name]['numdate']+=23
+                node_data['nodes'][n.name]['num_date_confidence'][0]+=23
+                node_data['nodes'][n.name]['num_date_confidence'][1]+=23
+                node_data['nodes'][n.name]['date']=str(int(node_data['nodes'][n.name]['numdate']))+node_data['nodes'][n.name]['date'][4:]
+                if n.is_terminal():
+                    node_data['nodes'][n.name]['raw_date']=str(int(node_data['nodes'][n.name]['numdate']))+node_data['nodes'][n.name]['raw_date'][4:]
+
+            with open(nd_file, 'wt') as fh:
+                json.dump(node_data,fh)
+            Phylo.write(T, tree_file, 'newick')
 
 rule ancestral:
     message: "Reconstructing ancestral sequences and mutations"

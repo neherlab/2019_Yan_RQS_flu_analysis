@@ -99,11 +99,11 @@ def flu_subsampling(metadata, viruses_per_month, time_interval, titer_fnames=Non
             for s, k in count_titer_measurements(fname).items():
                 HI_titer_count[s] += k
         def priority(strain):
-            return HI_titer_count[strain] + np.random.random()
+            return HI_titer_count[strain] + np.random.random() - metadata[strain]['date'].count('X')
     else:
         print("No titer counts provided - using random priorities")
         def priority(strain):
-            return np.random.random()
+            return np.random.random() - metadata[strain]['date'].count('X')
 
     print("Viruses per category:", viruses_per_month)
 
@@ -190,7 +190,14 @@ def parse_metadata(segments, metadata_files, date_format = "%Y-%m-%d"):
 
         numerical_dates = get_numerical_dates(tmp_meta, fmt=date_format)
         for x in tmp_meta:
-            tmp_meta[x]['num_date'] = np.mean(numerical_dates[x])
+            try:
+                tmp_meta[x]['num_date'] = np.mean(numerical_dates[x])
+            except:
+                try:
+                    tmp_meta[x]['num_date'] = int(tmp_meta[x]['date'][-4:])+0.5
+                except:
+                    tmp_meta[x]['num_date'] = np.nan
+                    continue
             tmp_meta[x]['year'] = int(tmp_meta[x]['num_date'])
             tmp_meta[x]['month'] = int((tmp_meta[x]['num_date']%1)*12)
             if 'age' in tmp_meta[x]:
@@ -241,14 +248,14 @@ if __name__ == '__main__':
     )
 
     parser.add_argument('-v', '--viruses_per_year', type = int, default=15,
-                        help='Subsample x viruses per country per month. Set to 0 to disable subsampling.')
+                        help='Subsample x viruses per region per year. Set to 0 to disable subsampling.')
     parser.add_argument('--sequences', nargs='+', help="FASTA file with viral sequences, one for each segment")
     parser.add_argument('--metadata', nargs='+', help="file with metadata associated with viral sequences, one for each segment")
     parser.add_argument('--date-format', type=str, default="%Y-%m-%d", help="date format")
     parser.add_argument('--output', help="name of the file to write selected strains to")
     parser.add_argument('--verbose', action="store_true", help="turn on verbose reporting")
 
-    parser.add_argument('-l', '--lineage', choices=['h3n2', 'h1n1pdm', 'vic', 'yam'], default='h3n2', type=str, help="single lineage to include (default: h3n2)")
+    parser.add_argument('-l', '--lineage', choices=['h3n2','h1n1', 'h1n1pdm', 'vic', 'yam', 'B'], default='h3n2', type=str, help="single lineage to include (default: h3n2)")
     parser.add_argument('-r', '--resolution',default='3y', type = str,  help = "single resolution to include (default: 3y)")
     parser.add_argument('-s', '--segments', default=['ha'], nargs='+', type = str,  help = "list of segments to include (default: ha)")
     parser.add_argument('--priority-region', help='a specific region to prioritize over others')

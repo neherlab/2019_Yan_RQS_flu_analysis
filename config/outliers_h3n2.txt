@@ -295,3 +295,12 @@ A/Wisconsin/34/2012
 A/Wisconsin/35/2012
 A/Zhejiang-Nanxun/12/2018
 A/Zhejiang-Wuxin/1300/2016
+A/Netherlands/233/1982
+A/Greece/1/97
+A/JOHANNESBURG/33/94_RHA
+A/Shiraz/1001/2015
+A/Corsica/4076-15/2015
+A/SOFIA/344/2002
+A/Sofia/343/2002
+A/Argentina/1/2002
+A/Philippines/PH-1159050/2002

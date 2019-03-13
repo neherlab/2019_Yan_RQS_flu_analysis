@@ -19,7 +19,7 @@ rule all_lineages:
 
 rule split:
     input:
-        tree = "results/tree_cdc_Ball_{segment}_all_cell_hi.nwk",
+        tree = "results/tree_cdc_B_{segment}_all_cell_hi.nwk",
     output:
         yam = "results/tree_cdc_yam_{segment}_all_cell_hi.nwk",
         vic = "results/tree_cdc_vic_{segment}_all_cell_hi.nwk"
@@ -42,8 +42,8 @@ def _get_node_data_for_export(wildcards):
 
     # Only request a distance file for builds that have mask configurations
     # defined.
-    if _get_build_mask_config(wildcards) is not None:
-        inputs.append(rules.distances.output.distances)
+    # if _get_build_mask_config(wildcards) is not None:
+    #     inputs.append(rules.distances.output.distances)
 
     # Convert input files from wildcard strings to real file names.
     inputs = [input_file.format(**wildcards) for input_file in inputs]
@@ -67,6 +67,37 @@ rule export:
             --auspice-config {input.auspice_config} \
             --output-tree {output.auspice_tree} \
             --output-meta {output.auspice_meta}
+        """
+
+rule export_Bsub:
+    input:
+        tree_vic = rules.split.output.vic,
+        tree_yam = rules.split.output.yam,
+        node_data = "results/branch-lengths_cdc_B_{segment}_all_cell_hi.json",
+        metadata = "results/results/metadata_B_{segment}.tsv",
+        aa_muts = "results/aa-muts_cdc_B_{segment}_all_cell_hi.json",
+        config = "config/auspice_config_B.json",
+    output:
+        tree_vic_json = "auspice/flu_seasonal_vic_{segment}_all_tree.json",
+        meta_vic_json = "auspice/flu_seasonal_vic_{segment}_all_meta.json",
+        tree_vic_json = "auspice/flu_seasonal_yam_{segment}_all_tree.json",
+        meta_vic_json = "auspice/flu_seasonal_yam_{segment}_all_meta.json"
+    shell:
+        """
+        augur export \
+            --tree {input.tree_vic} \
+            --metadata {input.metadata} \
+            --node-data {input.node_data} \
+            --auspice-config {input.auspice_config} \
+            --output-tree {output.tree_vic_json} \
+            --output-meta {output.meta_vic_json} &\
+        augur export \
+            --tree {input.tree_yam} \
+            --metadata {input.metadata} \
+            --node-data {input.node_data} \
+            --auspice-config {input.auspice_config} \
+            --output-tree {output.tree_yam_json} \
+            --output-meta {output.meta_yam_json} &\
         """
 
 rule simplify_auspice_names:
