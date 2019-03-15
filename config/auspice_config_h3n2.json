@@ -18,50 +18,6 @@
       "legendTitle":"Region",
       "menuItem":"region",
       "type":"discrete"
-    },
-    "clade_membership": {
-      "key": "clade_membership",
-      "legendTitle": "Clade",
-      "menuItem": "clade",
-      "type": "discrete"
-    },
-    "cTiter": {
-      "key": "cTiter",
-      "legendTitle": "Antigenic advance (tree model)",
-      "menuItem": "antigenic advance (tree model)",
-      "type": "continuous"
-    },
-    "cTiterSub": {
-      "key": "cTiterSub",
-      "legendTitle": "Antigenic advance (sub model)",
-      "menuItem": "antigenic advance (sub model)",
-      "type": "continuous"
-    },
-    "lbi": {
-      "vmin": 0,
-      "vmax": 0.7,
-      "legendTitle": "local branching index",
-      "key": "lbi",
-      "menuItem": "local branching index",
-      "type": "continuous"
-    },
-    "ep": {
-      "menuItem": "epitope mutations",
-      "legendTitle": "Epitope mutations",
-      "type": "continuous",
-      "key": "ep"
-    },
-    "ne": {
-      "menuItem": "non-epitope mutations",
-      "legendTitle": "Non-epitope mutations",
-      "type": "continuous",
-      "key": "ne"
-    },
-    "rb": {
-      "menuItem": "RBS adjacent mutations",
-      "legendTitle": "RBS adjacent mutations",
-      "type": "continuous",
-      "key": "rb"
     }
   },
   "geo": [
@@ -81,9 +37,10 @@
     "country"
   ],
   "panels": [
-    "tree"
+    "tree",
+    "entropy"
   ],
-  "vaccine_choices": {
+   "vaccine_choices": {
     "A/Wisconsin/67/2005": "2006-02-21",
     "A/Brisbane/10/2007": "2007-09-25",
     "A/Perth/16/2009": "2009-09-25",

@@ -99,11 +99,11 @@ def flu_subsampling(metadata, viruses_per_month, time_interval, titer_fnames=Non
             for s, k in count_titer_measurements(fname).items():
                 HI_titer_count[s] += k
         def priority(strain):
-            return HI_titer_count[strain] + np.random.random() - metadata[strain]['date'].count('X')
+            return HI_titer_count[strain] + 0.0*np.random.random() - metadata[strain]['date'].count('X')
     else:
         print("No titer counts provided - using random priorities")
         def priority(strain):
-            return np.random.random() - metadata[strain]['date'].count('X')
+            return 0.0*np.random.random() - metadata[strain]['date'].count('X')
 
     print("Viruses per category:", viruses_per_month)
 

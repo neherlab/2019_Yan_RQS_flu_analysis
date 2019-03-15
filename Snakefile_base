@@ -6,7 +6,7 @@ segments = ['ha']
 min_length = 900
 
 def vpy(v):
-    vpy = {'all':{'h3n2':20, 'h1n1':20, 'h1n1pdm':50, 'B':10}}
+    vpy = {'all':{'h3n2':20, 'h1n1':20, 'h1n1pdm':50, 'B':20}}
     return vpy[v.resolution][v.lineage] if v.resolution in vpy else 5
 
 def reference_strain(v):

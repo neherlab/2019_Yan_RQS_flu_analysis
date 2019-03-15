@@ -4,8 +4,8 @@ import numpy as np
 lineages = [('h3n2', 'A/H3N2'),
 			('h1n1pdm', 'A/H1N1pdm(2009)'),
 			('h1n1', 'A/H1N1(1918)'),
-			('Bvic','B/Vic'),
-			('Byam', 'B/Yam')]
+			('vic','B/Vic'),
+			('yam', 'B/Yam')]
 fs=20
 cutoff = 1970
 ymax=15
@@ -14,7 +14,7 @@ mTmrca = {}
 Tmrca = {}
 for l,ln in lineages:
 	try:
-		tmrca_traj = np.loadtxt('%s_tmrca_trajectory.dat'%l)
+		tmrca_traj = np.loadtxt('analysis/%s_ha_Tmrca_trajectory.dat'%l)
 		tmrca_traj = tmrca_traj[tmrca_traj[:,0]>cutoff]
 		if tmrca_traj.shape[0]%2==1:
 			tmrca_traj = tmrca_traj[1:]
@@ -39,4 +39,4 @@ for ax,(l, ln) in zip(axs, lineages):
 	ax.tick_params(labelsize=0.8*fs)
 
 plt.xlabel('year', fontsize=fs)
-plt.savefig('all_Tmrca.pdf')
+plt.savefig('figures/all_Tmrca.pdf')

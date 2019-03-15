@@ -18,32 +18,6 @@
       "legendTitle":"Region",
       "menuItem":"region",
       "type":"discrete"
-    },
-    "clade_membership": {
-      "key": "clade_membership",
-      "legendTitle": "Clade",
-      "menuItem": "clade",
-      "type": "discrete"
-    },
-    "cTiter": {
-      "key": "cTiter",
-      "legendTitle": "Antigenic advance (tree model)",
-      "menuItem": "antigenic advance (tree model)",
-      "type": "continuous"
-    },
-    "cTiterSub": {
-      "key": "cTiterSub",
-      "legendTitle": "Antigenic advance (sub model)",
-      "menuItem": "antigenic advance (sub model)",
-      "type": "continuous"
-    },
-    "lbi": {
-      "vmin": 0,
-      "vmax": 0.7,
-      "legendTitle": "local branching index",
-      "key": "lbi",
-      "menuItem": "local branching index",
-      "type": "continuous"
     }
   },
   "geo": [
@@ -55,19 +29,18 @@
     "colorBy": "clade_membership"
   },
   "maintainer": [
-    "Trevor Bedford and Barney Potter",
-    "http://bedford.io/"
+    "Richard Neher",
+    "http://neherlab.org"
   ],
   "filters": [
-    "clade_membership",
     "region",
-    "country",
-    "authors"
+    "country"
   ],
   "panels": [
-    "tree"
+    "tree",
+    "entropy"
   ],
-  "vaccine_choices": {
+   "vaccine_choices": {
     "B/Shanghai/361/2002": "2004-09-25",
     "B/Florida/4/2006": "2008-09-25",
     "B/Wisconsin/1/2010": "2012-02-25",

@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description = "Analyze TMRCA.")
 parser.add_argument("--tree", help="tree file")
 parser.add_argument("--node-data", help="node_data file")
 parser.add_argument("--titers", help="titer_model file")
-parser.add_argument("--output", help="output prefix")
+parser.add_argument("--output", help="output file")
 args = parser.parse_args()
 
 T = Phylo.read(args.tree, 'newick')
@@ -125,12 +125,11 @@ if args.titers:
 	antigenic_traj = np.array(antigenic_traj)
 	antigenic_div_traj = np.array(antigenic_div_traj)
 
-np.savetxt(args.output + '_tmrca_trajectory.dat', tmrca_traj)
+np.savetxt(args.output, tmrca_traj)
 plt.figure(figsize=(12,6))
 plt.plot(tmrca_traj[:,0], tmrca_traj[:,1])
 plt.ylabel('tree depth')
 plt.xlabel('year')
-plt.savefig(args.output + '_depth.pdf')
 
 if args.titers:
 	# plt.figure()
@@ -139,5 +138,4 @@ if args.titers:
 	plt.plot(antigenic_div_traj[:,0], antigenic_div_traj[:,1])
 	plt.ylabel('tree depth')
 	plt.xlabel('year')
-	plt.savefig(args.output + '_titer_depth.pdf')
 
