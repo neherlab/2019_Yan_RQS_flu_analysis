@@ -1,54 +1,13 @@
 # nextstrain.org/flu
 
-This is the [Nextstrain](https://nextstrain.org) build for seasonal influenza viruses, available online at [nextstrain.org/flu](https://nextstrain.org/flu).
+This is the [Nextstrain](https://nextstrain.org) build for seasonal influenza viruses adapted for the publication Le, Neher, Shraiman on ["Phylodynamics of rapidly adapting pathogens: extinction and speciation of a Red Queen."](https://www.biorxiv.org/content/early/2018/10/29/455444).
 
-The build encompasses fetching data, preparing it for analysis, doing quality
-control, performing analyses, and saving the results in a format suitable for
-visualization (with [auspice][]).  This involves running components of
-Nextstrain such as [fauna][] and [augur][].
+The results are available as [community builds on nextstrain](https://nextstrain.org/community/neherlab/allflu/h3n2_ha).
+The analysis is derived from the pipeline at [nextstrain/seasonal-flu](https://github.com/nextstrain/seasonal-flu). In contrast to the regular nextflu analysis, this analysis operates only on freely available data.
 
-All influenza virus specific steps and functionality for the Nextstrain pipeline should be
-housed in this repository.
+In addition, this repository contains scripts to plot the evolution of the TMRCA for the different lineages.
 
-This build is more complicated than other standard nextstrain build because all four currently circulating seasonal influenza lineages (A(H3N2), A(H1N1pdn), B(vic) and B(yam)) are analyzed using the same snakefile with appropriate wildcards.
-In addition, we run analysis of the HA and NA segment of the influenza virus genome and analyze data sets that span different time intervals (e.g. 2, 6, 12 years).
+ * To generate Figure 1, run the Snakemake file. The script `scripts/plot_all_Tmrca.py` generates the saw-tooth graphs in Fig.~1.
+ * `script/split_trees.py`: script that splits a global influenza B tree into the sublineages Victoria and Yamagata
+ * `script/plot_tmrca.py`: script that uses the output of the `augur` pipeline to produce the tabular files `{lineage}_tmrca_trajectory.dat`. The latter are tab separated files with year in the first and Tmrca in the second columns.
 
-Furthermore, the Nextstrain analysis of influenza virus evolution also uses antigenic and serological data from different WHO collaborating centers.
-These antigenic data come in four flavors depending on the assay that passage history of the antigens.
-The influenza virus output files have the wildcard set
-
-`{center}_{lineage}_{segment}_{resolution}_{passage}_{assay}`
-
-that currently use the following values:
-
- * center: [`who`, `cdc`, `crick`, `niid`, `vidrl`]
- * lineage: [`h3n2`, `h1n1pdm`, `vic`, `yam`]
- * segment: [`ha`, `na`]
- * resolution: [`2y`, `3y`, `6y`, `12y`]
- * assay: [`hi`, `fra`]
- * passage: [`cell`, `egg`]
-
- Intermediate files follow this wildcard ordering, but may omit irrelevant wildcards, ie `filtered_h3n2_ha.fasta`.
-
-To manage both builds for the general public and the different WHO collaborating centers, the Snakefiles are split into a `Snakefile_base` that contains the rules for the core analysis and the files
-
- * `Snakefile` for the standard build
- * `Snakefile_WHO` for the WHO CC builds
- * `Snakefile_reports` to generate figures and additional analysis for the biannual reports to the WHO
-
-The latter snakefiles import the rules specified in `Snakefile_base`, define additional rules, and specify the build targets.
-
-
-### fauna / RethinkDB credentials
-
-This build starts by pulling sequences from our live [fauna][] database (a RethinkDB instance). This
-requires environment variables `RETHINK_HOST` and `RETHINK_AUTH_KEY` to be set.
-
-
-[Nextstrain]: https://nextstrain.org
-[fauna]: https://github.com/nextstrain/fauna
-[augur]: https://github.com/nextstrain/augur
-[auspice]: https://github.com/nextstrain/auspice
-[snakemake cli]: https://snakemake.readthedocs.io/en/stable/executable.html#all-options
-[nextstrain-cli]: https://github.com/nextstrain/cli
-[nextstrain-cli README]: https://github.com/nextstrain/cli/blob/master/README.md
