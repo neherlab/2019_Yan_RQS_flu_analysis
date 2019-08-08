@@ -1,4 +1,4 @@
-# nextstrain.org/flu
+# Long Term analysis of influenza virus evolution.
 
 This is the [Nextstrain](https://nextstrain.org) build for seasonal influenza viruses adapted for the publication Le, Neher, Shraiman on ["Phylodynamics of rapidly adapting pathogens: extinction and speciation of a Red Queen."](https://www.biorxiv.org/content/early/2018/10/29/455444).
 
